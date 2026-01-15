@@ -17,6 +17,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 7526136310          
 
 PHOTO_URL = "https://raw.githubusercontent.com/epdoad/troll/2e19fc2cea41a00f994b6278a879cdf0bfb5bb36/troll.png"
+PHOTO_URL_HI = "https://github.com/epdoad/troll/blob/main/pictures/jpg(9).png?raw=true"
 DB_PATH = "users.db"
 # ====================
 
@@ -95,21 +96,21 @@ def get_nick(message: Message) -> str:
 def reply_kb() -> ReplyKeyboardMarkup:
 
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Передать привет")]],
+        keyboard=[[KeyboardButton(text="ПОСЛАТЬ НАХУЙ ДРУГА")]],
         resize_keyboard=True
     )
 
-async def send_photo_with_caption(message: Message, caption: str):
-    """Удобная отправка: если фото не отправится — отправим текст."""
+async def send_photo_with_caption(message: Message, caption: str, photo_url: str):
     try:
         await message.answer_photo(
-            photo=PHOTO_URL,
+            photo=photo_url,
             caption=caption,
             reply_markup=reply_kb()
         )
     except Exception:
         logger.exception("Не смог отправить фото по ссылке, отправляю текст")
         await message.answer(caption, reply_markup=reply_kb())
+
 
 
 
@@ -146,7 +147,7 @@ async def start(message: Message, bot: Bot):
                 sender_id = int(payload.replace("hi_", "", 1))
                 sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
                 receiver_name = get_nick(message)
-                hi_text = f"{receiver_name}, тебе передаёт привет {sender_name}"
+                hi_text = f"{receiver_name}, ТЕБЯ ПОСЛАЛ НАХУЙ {sender_name}"
                 logger.info(f"hi_received | receiver_id={user_id} | sender_id={sender_id}")
             except ValueError:
                 pass
@@ -154,7 +155,7 @@ async def start(message: Message, bot: Bot):
     if hi_text:
         await send_photo_with_caption(message, hi_text)
 
-    await send_photo_with_caption(message, f'@Trolocrack? {get_nick(message)}')
+    await send_photo_with_caption(message, f'ЧЕ В ХУЙ@Trolocrack? {get_nick(message)}')
 
 
 async def send_hi_button(message: Message, bot: Bot):
@@ -165,9 +166,9 @@ async def send_hi_button(message: Message, bot: Bot):
     link = await create_start_link(bot, payload=f"hi_{sender_id}", encode=True)
 
     await message.answer(
-        "Ссылка, чтобы передать привет:\n"
+        "PRUNK LINK FOR YOU STUPID FRIEND\n"
         f"{link}\n\n"
-        "Отправь её другу — он нажмёт Start и увидит привет."
+        
     )
 
 
@@ -186,3 +187,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
