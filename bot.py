@@ -181,10 +181,11 @@ async def main():
     dp = Dispatcher()
 
     dp.message.register(start, CommandStart())
-    dp.message.register(send_hi_button, F.text == "Передать привет")
+    dp.message.register(send_hi_button, F.text == "ПОСЛАТЬ НАХУЙ ДРУГАт")
 
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
