@@ -45,7 +45,7 @@ async def start(message: Message):
 
     await message.answer_photo(
         photo=PHOTO_URL,
-        caption=f' @Trolocrack? {get_nick(message)}'
+        caption=f'Че в хуй? @Trolocrack? {get_nick(message)}'
     )
 
 async def main():
@@ -56,4 +56,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
