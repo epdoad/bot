@@ -135,8 +135,14 @@ async def start(message: Message, bot: Bot):
     # ✅ ВАЖНО: передаём 3-й аргумент (фото)
 if hi_text:
     await send_photo_with_caption(message, hi_text, PHOTO_URL_HI)
-        return  
-        await send_photo_with_caption(message, f'ЧЕ В ХУЙ @TROLOCRACK?', PHOTO_URL)
+    return 
+
+await send_photo_with_caption(
+    message,
+    f'ЧЕ В ХУЙ @TROLOCRACK?',
+    PHOTO_URL
+)
+
 
 async def send_hi_button(message: Message, bot: Bot):
     sender_id, username, full_name = get_user_fields(message)
@@ -165,6 +171,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
