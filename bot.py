@@ -2,21 +2,27 @@ import os
 import asyncio
 import logging
 import sqlite3
+
 from aiogram import Bot, Dispatcher
 from aiogram.filters import CommandStart
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    Message,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery,
+)
 from aiogram.utils.deep_linking import create_start_link
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 7526136310
 
 PHOTO_URL = "https://raw.githubusercontent.com/epdoad/troll/2e19fc2cea41a00f994b6278a879cdf0bfb5bb36/troll.png"
-
 DB_PATH = "users.db"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
+# ---------------- DB ----------------
 def init_db():
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -33,8 +39,9 @@ def init_db():
 
 def upsert_user(user_id: int, username: str, full_name: str) -> bool:
     """
-    Возвращает True, если пользователь новый (раньше не был).
-    И всегда обновляет username/full_name (если изменились).
+    True  -> пользователь новый
+    False -> уже был
+    При этом username/full_name обновляются всегда.
     """
     con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
@@ -60,33 +67,36 @@ def get_sender_display(sender_id: int) -> str | None:
     cur.execute("SELECT username, full_name FROM starters WHERE user_id = ?", (sender_id,))
     row = cur.fetchone()
     con.close()
+
     if not row:
         return None
     username, full_name = row
     if username:
-        return username  
+        return username  # уже с @
     return full_name or None
 
+# ------------- helpers -------------
 def get_user_fields(message: Message):
     u = message.from_user
     username = f"@{u.username}" if u.username else ""
     full_name = " ".join(x for x in [u.first_name, u.last_name] if x).strip()
-    return u.id, (username or ""), (full_name or "")
+    return u.id, username, full_name
 
 def get_nick(message: Message) -> str:
     u = message.from_user
     if u.username:
         return f"@{u.username}"
-    full = " ".join(x for x in [u.first_name, u.last_name] if x)
+    full = " ".join(x for x in [u.first_name, u.last_name] if x).strip()
     return full or "пользователь"
 
 def kb_send_hi() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="ПОСЛАТЬ НАХУЙ КЕНТА", callback_data="send_hi")]
+            [InlineKeyboardButton(text="Передать привет", callback_data="send_hi")]
         ]
     )
 
+# ------------- handlers -------------
 async def start(message: Message, bot: Bot):
     if not TOKEN:
         return
@@ -96,8 +106,10 @@ async def start(message: Message, bot: Bot):
 
     is_new = upsert_user(user_id, username, full_name)
 
-    logger.info(f"/start | user_id={user_id} | username={username or '—'} | name={full_name or '—'} | chat_id={chat_id}")
-    
+    logger.info(
+        f"/start | user_id={user_id} | username={username or '—'} | name={full_name or '—'} | chat_id={chat_id}"
+    )
+
     if is_new:
         try:
             await bot.send_message(
@@ -110,62 +122,59 @@ async def start(message: Message, bot: Bot):
             )
         except Exception:
             logger.exception("Не смог отправить лог админу")
+
+    # ----- обработка deep-link: /start hi_<sender_id> -----
     text = None
-   
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) == 2:
+        payload = parts[1].strip()
+        if payload.startswith("hi_"):
+            try:
+                sender_id = int(payload.replace("hi_", "", 1))
+                sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
+                receiver_name = get_nick(message)
+                text = f"{receiver_name}, тебе передаёт привет {sender_name}"
+            except ValueError:
+                pass
 
-parts = (message.text or "").split(maxsplit=1)
-if len(parts) == 2:
-    payload = parts[1].strip()
-    if payload.startswith("hi_"):
-        try:
-            sender_id = int(payload.replace("hi_", "", 1))
-            sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
+    if text:
+        await message.answer(text)
 
-            receiver_name = get_nick(message)
-
-            text = f"{receiver_name}, тебе передаёт привет {sender_name}"
-        except ValueError:
-            pass
-
-if text:
-    await message.answer(text)
-
-
-    # Основное сообщение + кнопка
+    # ----- основное сообщение + кнопка -----
     try:
         await message.answer_photo(
             photo=PHOTO_URL,
-            caption=f'Че в хуй @Trolocrack? {get_nick(message)}',
+            caption=f'@Trolocrack? {get_nick(message)}',
             reply_markup=kb_send_hi()
         )
     except Exception:
         logger.exception("Не смог отправить фото по ссылке")
         await message.answer(f'@Trolocrack? {get_nick(message)}', reply_markup=kb_send_hi())
 
-async def on_callback(callback_query, bot: Bot):
+async def on_callback(callback_query: CallbackQuery, bot: Bot):
+    if callback_query.data != "send_hi":
+        return
+
     u = callback_query.from_user
-username = f"@{u.username}" if u.username else "без username"
-full_name = " ".join(x for x in [u.first_name, u.last_name] if x)
+    username = f"@{u.username}" if u.username else "без username"
+    full_name = " ".join(x for x in [u.first_name, u.last_name] if x).strip()
 
-logger.info(
-    f"send_hi_click | user_id={u.id} | username={username} | name={full_name}"
-)
+    logger.info(f"send_hi_click | user_id={u.id} | username={username} | name={full_name or '—'}")
 
-    user = callback_query.from_user
-    sender_id = user.id
-
-    link = await create_start_link(bot, payload=f"hi_{sender_id}", encode=True)
+    # создаём ссылку вида t.me/<bot>?start=hi_<sender_id>
+    link = await create_start_link(bot, payload=f"hi_{u.id}", encode=True)
 
     await bot.send_message(
         chat_id=callback_query.message.chat.id,
         text=(
-            "PRUNK LINK FOR YUOR STUPID FRIEND LOL\n"
+            "Ссылка, чтобы передать привет:\n"
             f"{link}\n\n"
-            "ТВОЙ ТУПОЙ ДРУГ ПЕРЕЙДЕТ ПО НЕЙ, И ЕГО ПОШЛЮТ НАХУЙ ОТ ТВОЕГО ИМЕНИ"
+            "Друг откроет ссылку, нажмёт Start — и увидит, от кого привет."
         )
     )
-    await callback_query.answer()
+    await callback_query.answer("Готово ✅")
 
+# ------------- run -------------
 async def main():
     if not TOKEN:
         raise RuntimeError("Не найден BOT_TOKEN. Добавь переменную окружения BOT_TOKEN (Railway -> Variables).")
@@ -181,6 +190,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
