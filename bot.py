@@ -79,7 +79,7 @@ def get_nick(message: Message) -> str:
     full = " ".join(x for x in [u.first_name, u.last_name] if x).strip()
     return full or "пользователь"
 
-BUTTON_TEXT = "ПОСЛАТЬ ДРУГА"  # ✅ совет: нейтральнее. Если меняешь — меняй везде одинаково.
+BUTTON_TEXT = "ПОСЛАТЬ ДРУГА НАХУЙ"  # ✅ совет: нейтральнее. Если меняешь — меняй везде одинаково.
 
 def reply_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
@@ -127,7 +127,7 @@ async def start(message: Message, bot: Bot):
                 sender_id = int(payload.replace("hi_", "", 1))
                 sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
                 receiver_name = get_nick(message)
-                hi_text = f"{receiver_name}, тебе передаёт привет {sender_name}"
+                hi_text = f"{receiver_name},ТЕБЯ ПОСЛАЛ НАХУЙ {sender_name}"
                 logger.info(f"hi_received | receiver_id={user_id} | sender_id={sender_id}")
             except ValueError:
                 pass
@@ -136,7 +136,7 @@ async def start(message: Message, bot: Bot):
     if hi_text:
         await send_photo_with_caption(message, hi_text, PHOTO_URL_HI)
 
-    await send_photo_with_caption(message, f'@Trolocrack? {get_nick(message)}', PHOTO_URL)
+    await send_photo_with_caption(message, f'ЧЕ В ХУЙ @Trolocrack? {get_nick(message)}', PHOTO_URL)
 
 async def send_hi_button(message: Message, bot: Bot):
     sender_id, username, full_name = get_user_fields(message)
@@ -165,3 +165,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
