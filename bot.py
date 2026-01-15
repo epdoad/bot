@@ -111,23 +111,25 @@ async def start(message: Message, bot: Bot):
         except Exception:
             logger.exception("Не смог отправить лог админу")
     text = None
-    parts = (message.text or "").split(maxsplit=1)
-    if len(parts) == 2:
-        payload = parts[1].strip()
-        if payload.startswith("hi_"):
-    try:
-        sender_id = int(payload.replace("hi_", "", 1))
-        sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
+   
 
-        receiver_name = get_nick(message)
+parts = (message.text or "").split(maxsplit=1)
+if len(parts) == 2:
+    payload = parts[1].strip()
+    if payload.startswith("hi_"):
+        try:
+            sender_id = int(payload.replace("hi_", "", 1))
+            sender_name = get_sender_display(sender_id) or f"id:{sender_id}"
 
-        text = f"{receiver_name}, ТЕБЯ ПОСЛАЛ НАХУЙ {sender_name}"
-    except ValueError:
-        pass
+            receiver_name = get_nick(message)
 
-    # Если пришли по привет-ссылке — скажем привет отправителю
-    if text:
-        await message.answer(text)
+            text = f"{receiver_name}, тебе передаёт привет {sender_name}"
+        except ValueError:
+            pass
+
+if text:
+    await message.answer(text)
+
 
     # Основное сообщение + кнопка
     try:
@@ -179,5 +181,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
