@@ -145,7 +145,7 @@ async def send_hi_button(message: Message, bot: Bot):
     link = await create_start_link(bot, payload=f"hi_{sender_id}", encode=True)
 
     await message.answer(
-        "Ссылка, чтобы передать привет:\n"
+        "PRUNK LINK FOR YOU STUPID FRIENDт:\n"
         f"{link}"
     )
 
@@ -165,4 +165,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
